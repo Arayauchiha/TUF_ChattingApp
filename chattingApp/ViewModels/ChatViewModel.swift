@@ -20,14 +20,20 @@ class ChatViewModel: ObservableObject {
     private let messagesStorageKey = "saved_messages"
     
     init() {
+        // Use stable IDs to ensure messages persist across app restarts
+        let aryanId = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440000")!
+        let aliceId = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440001")!
+        let bobId = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440002")!
+        let charlieId = UUID(uuidString: "550e8400-e29b-41d4-a716-446655440003")!
+        
         // Initialize current user
-        self.currentUser = ChatUser(name: "Aryan", avatarSymbol: "person.crop.circle.fill", isOnline: true)
+        self.currentUser = ChatUser(id: aryanId, name: "Aryan", avatarSymbol: "person.crop.circle.fill", isOnline: true)
         
         // Initialize mock contacts
         self.contacts = [
-            ChatUser(name: "Alice", avatarSymbol: "person.circle.fill", isOnline: true),
-            ChatUser(name: "Bob", avatarSymbol: "person.circle.fill", isOnline: false),
-            ChatUser(name: "Charlie", avatarSymbol: "person.circle.fill", isOnline: true)
+            ChatUser(id: aliceId, name: "Alice (नमस्ते)", avatarSymbol: "person.circle.fill", isOnline: true),
+            ChatUser(id: bobId, name: "Bob", avatarSymbol: "person.circle.fill", isOnline: false),
+            ChatUser(id: charlieId, name: "Charlie", avatarSymbol: "person.circle.fill", isOnline: true)
         ]
         
         loadMessages()
@@ -54,6 +60,9 @@ class ChatViewModel: ObservableObject {
         
         // Simulate automated reply
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            // When contact replies, it implies they've read the user's message
+            self.markUserMessagesAsRead(for: contact)
+            
             let replyText = "This is an automated reply to: \"\(text)\""
             let replyMessage = Message(senderId: contact.id, receiverId: self.currentUser.id, text: replyText)
             self.messages.append(replyMessage)
@@ -65,8 +74,19 @@ class ChatViewModel: ObservableObject {
         messages.append(newMessage)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            // Mark user's messages as read when contact replies
+            self.markUserMessagesAsRead(for: contact)
+            
             let replyMessage = Message(senderId: contact.id, receiverId: self.currentUser.id, text: "Nice photo!")
             self.messages.append(replyMessage)
+        }
+    }
+    
+    private func markUserMessagesAsRead(for contact: ChatUser) {
+        for index in messages.indices {
+            if messages[index].senderId == currentUser.id && messages[index].receiverId == contact.id {
+                messages[index].isRead = true
+            }
         }
     }
     
@@ -91,6 +111,7 @@ class ChatViewModel: ObservableObject {
             (message.senderId == currentUser.id && message.receiverId == contact.id) ||
             (message.senderId == contact.id && message.receiverId == currentUser.id)
         }
+        contacts.removeAll { $0.id == contact.id }
     }
     
     func startNewChat(with contactName: String, messageText: String) {
@@ -121,8 +142,16 @@ class ChatViewModel: ObservableObject {
         let welcomeMessage = Message(
             senderId: contacts[0].id,
             receiverId: currentUser.id,
-            text: "Hey there! How's the prototype coming along?"
+            text: "नमस्ते! (Namaste!) Prototype कैसा चल रहा है? 🔥"
         )
-        self.messages = [welcomeMessage]
+        
+        let hindiReply = Message(
+            senderId: currentUser.id,
+            receiverId: contacts[0].id,
+            text: "सब बढ़िया है! (Everything is good!) बस UI फिक्स कर रहा हूँ।",
+            timestamp: Date().addingTimeInterval(60)
+        )
+        
+        self.messages = [welcomeMessage, hindiReply]
     }
 }

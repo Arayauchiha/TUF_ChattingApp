@@ -38,15 +38,26 @@ struct ChatDetailView: View {
                     scrollContent
                 }
                 .coordinateSpace(name: "scroll")
+                .scrollDismissesKeyboard(.interactively)
+                .onTapGesture {
+                    isFocused = false
+                }
                 
                 if showScrollToBottom {
                     scrollToBottomButton(proxy: proxy)
+                        .padding(.bottom, 12) // Positioned just above input bar
+                        .zIndex(1)
                 }
             }
             .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                showScrollToBottom = value < -200
+                // Sensitivity threshold: if bottom is 800px away from top
+                // (minY increases as we scroll UP to see old messages)
+                withAnimation(.spring()) {
+                    showScrollToBottom = value > 800
+                }
             }
             .onChange(of: viewModel.messages) { _ in
+                viewModel.markAsRead(for: contact)
                 scrollToBottom(proxy: proxy)
             }
             .onAppear {
@@ -67,9 +78,13 @@ struct ChatDetailView: View {
                 )
                 .id(message.id)
             }
+            
+            // Detector at the bottom
+            Color.clear
+                .frame(height: 1)
+                .background(scrollDetector)
         }
         .padding(.top)
-        .background(scrollDetector)
     }
     
     private var scrollDetector: some View {
@@ -119,7 +134,7 @@ struct ChatDetailView: View {
                         .foregroundColor(.primary)
                 }
                 .background(Color(.systemGray6))
-                .clipShape(Capsule())
+                .clipShape(RoundedRectangle(cornerRadius: 20))
                 
                 Button(action: handleSendMessage) {
                     Image(systemName: "arrow.up.circle.fill")
@@ -130,8 +145,7 @@ struct ChatDetailView: View {
                 .disabled(!canSend)
             }
             .padding(.horizontal)
-            .padding(.vertical, 10)
-            .background(Color.black.ignoresSafeArea())
+            .padding(.vertical, 8)
         }
     }
     

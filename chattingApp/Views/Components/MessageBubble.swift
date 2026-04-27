@@ -55,7 +55,7 @@ struct MessageBubble: View {
             if isCurrentUser {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 10))
-                    .foregroundColor(.white)
+                    .foregroundColor(message.isRead ? .blue : .white)
             }
         }
         .padding(6)
@@ -74,7 +74,7 @@ struct MessageBubble: View {
             if isCurrentUser {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 10))
-                    .foregroundColor(.blue)
+                    .foregroundColor(message.isRead ? .blue : .gray)
             }
         }
     }
